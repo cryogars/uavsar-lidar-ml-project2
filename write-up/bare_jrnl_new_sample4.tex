@@ -1,0 +1,711 @@
+\documentclass[lettersize,journal]{IEEEtran}
+\usepackage{amsmath,amsfonts}
+\usepackage{algorithmic}
+\usepackage{algorithm}
+\usepackage{array}
+\usepackage[caption=false,font=normalsize,labelfont=sf,textfont=sf]{subfig}
+\usepackage{textcomp}
+\usepackage{stfloats}
+\usepackage{url}
+\usepackage{verbatim}
+\usepackage{graphicx}
+\usepackage{cite}
+\hyphenation{op-tical net-works semi-conduc-tor IEEE-Xplore}
+% updated with editorial comments 8/9/2021
+
+\begin{document}
+
+% \title{A Sample Article Using IEEEtran.cls\\ for IEEE Journals and Transactions}
+
+\title{Accuracy-Resolution Trade-offs and Model Transferability in Snow Depth Monitoring with Machine Learning and L-Band InSAR: A Multi-Resolution Study in Idaho}
+
+% \author{IEEE Publication Technology,~\IEEEmembership{Staff,~IEEE,}
+
+\author{Ibrahim~O.~Alabi,~\IEEEmembership{Member,~IEEE,}
+Hans-Peter~Marshall,~\IEEEmembership{Member,~IEEE,}
+Jodi~Mead,
+and~Ernesto~Trujillo% <-this % stops a space
+        % <-this % stops a space
+\thanks{Ibrahim O. Alabi is with the Computing PhD program, Boise
+State University, Boise, ID 83725 USA (e-mail: ibrahimolalekana@u.boisestate.edu).}% <-this % stops a space
+\thanks{Ibrahim O. Alabi, Hans-Peter Marshall, and Ernesto Trujillo are with the Department of Geosciences, Boise
+State University, Boise, ID 83725 USA (e-mail: ibrahimolalekana@u.boisestate.edu;
+hpmarshall@boisestate.edu; ernestotrujillog@boisestate.edu).}
+\thanks{Jodi Mead is with the Department of Mathematics, Boise State University, Boise, ID 83725 USA (e-mail:jmead@boisestate.edu).}}
+
+% \author{FirstName~LastName\IEEEmembership{Member,~IEEE}% jmead@boisestate.edu
+% \thanks{FirstName LastName is with the Department of Geosciences, 
+% Boise State University, Boise, ID 83725 USA.
+% (e-mail: firstname.lastname@boisestate.edu)}%
+% \orcidicon{xxxx-xxxx-xxxx-xxxx}}
+
+% The paper headers
+\markboth{Alabi \MakeLowercase{\textit{et al.}}:Advancing Snow Depth Retrieval with ML and L-Band InSAR}%
+{Shell \MakeLowercase{\textit{et al.}}: A Sample Article Using IEEEtran.cls for IEEE Journals}
+
+% \IEEEpubid{0000--0000/00\$00.00~\copyright~2021 IEEE}
+% Remember, if you use this you must call \IEEEpubidadjcol in the second
+% column for its text to clear the IEEEpubid mark.
+
+\maketitle
+
+\begin{abstract}
+Blah blah blah
+\end{abstract}
+
+\begin{IEEEkeywords}
+  L-band InSAR, Machine Learning, XGBoost, NISAR, Snow Depth, Remote Sensing.
+\end{IEEEkeywords}
+
+\section{Introduction}
+
+\IEEEPARstart{S}{now} depth monitoring is essential for hydrologic forecasting and water resource management, particularly in mountainous regions where snowpack is a key source of freshwater. Traditional in situ measurements using snow probes \cite{sturm2018automatic} or from automated snow telemetry  stations \cite{ryan2008evaluation, serreze1999characteristics} offer high accuracy but have limited spatial coverage and lack the representativeness required to resolve the spatial heterogeneity of snow depth across a landscape \cite{trujillo2015theoretical}. Airborne lidar (light detection and ranging) offers high-precision mapping but is cost-prohibitive for routine monitoring \cite{deems2013lidar}. Ground-based Terrestrial Laser Scanning (TLS), though capable of sub-daily measurements, requires multiple scan positions and loses accuracy with increasing distance from the scanner \cite{prokop2008assessing, grunewald2014elevation, lopez2017using, mazzotti2019revisiting, buhrle2023spatially}. The forthcoming NASA-ISRO Synthetic Aperture Radar (NISAR) mission, with its L-band capabilities (1.257 GHz frequency; 25 cm wavelength) and 12-day global repeat cycle, presents an opportunity to monitor snow depth over large areas at high spatiotemporal resolutions \cite{nisar2018handbook}.
+
+The 12-day global revisit cycle of NISAR will enable repeat-pass interferometric SAR (InSAR) measurements, where the phase shift between acquisitions can be related to changes in snow depth and snow water equivalent (SWE) \cite{marshall2021band, tarricone2022estimating, hoppinen2023snow}. With the anticipated high data volume from NISAR, machine learning (ML) techniques for L-band InSAR–based snow depth estimation appear promising. In a recent proof-of-concept study \cite{alabi5advancing}, we demonstrated that an ML model (XGBoost) trained on L-band InSAR data achieved snow depth estimation accuracies approaching that of lidar measurements in flat terrain (Grand Mesa, Colorado), when validated against in situ data. However, this initial work was limited in scope, having been tested only in flat terrain and at a single resolution of 3 meters. For operational snow monitoring and future satellite missions like NISAR, it is essential to validate the XGBoost model across diverse landscapes and multiple resolutions to understand the model transferability to mountainous regions and the impact of spatial resolution on retrieval accuracy.
+
+In the present study, we extend our earlier work by evaluating the transferability of the trained XGBoost model to rugged mountainous terrain. Specifically, we (1) investigate the transferability of the existing XGBoost model without retraining to a different snow climate in Idaho, where the topography is rugged and the snowpack is warmer; (2) retrain the existing model with local data to determine whether site-specific information enhances accuracy; (3) explore the impact of varying spatial resolutions (3, 5, 10, 50, and 100 m) on snow depth retrieval; and (4) assess the role of InSAR coherence in driving model performance. 
+
+For each objective outlined above, we evaluate the model performance separately across vegetated (vegetation height $<$ 0.5 m) and open areas. This distinction is important because approximately 33\% of Earth's seasonal snow cover exists in forested environments \cite{bonnell2024band}, making accurate snow depth estimates under vegetation essential for comprehensive monitoring. Our previous study \cite{alabi5advancing} showed that XGBoost performs nearly as well in vegetated terrain (RMSE = 10.46 cm, $R^2$ = 0.86) as in open areas (RMSE = 9.50 cm, $R^2$ = 0.90). Demonstrating similarly robust results in rugged mountainous regions would thus represent a major advancement for operational snow-monitoring efforts using ML models and L-band InSAR data.
+
+The findings from this study can potentially complement existing snow monitoring practices and contribute to the development of operational snow depth retrieval algorithms for NISAR and future L-band missions. This work would also advance the broader application of machine learning in remote sensing by providing insights into model generalization across different environmental conditions.
+
+% Remote sensing with satellite-based synthetic aperture radar (SAR) offers a cost-effective alternative for large-scale snow depth monitoring.
+
+\section{Study Sites}
+
+This study was conducted at three sites (Banner Creek, Dry Creek, and Mores Creek) in the central mountains of Idaho (Fig. \ref{fig-1}). These sites had coincident airborne lidar coverage within the UAVSAR flight paths conducted during the 2020 and 2021 NASA SnowEx campaigns. The terrain at these sites is more rugged than the relatively flat Grand Mesa, Colorado, where our previous proof-of-concept study \cite{alabi5advancing} was conducted.
+
+We used snow-free lidar DEMs at 0.5 m resolution \cite{naheem2022dem} to quantify topographic variability at each site. Banner Creek ranges in elevation from 1619 to 2840 meters, Dry Creek from 1387 to 2310 meters, and Mores Creek from 1578 to 2478 meters. Mean slopes across the sites vary between 22$^\circ$ and 25$^\circ$, with some slopes approaching 90$^\circ$ in steeper areas. The sites exhibit varying aspect distributions: Banner Creek and Mores Creek are predominantly east-facing (15.3\% and 16.2\% of area, respectively), while Dry Creek is predominantly west-facing (15.9\%). Finally, these sites experience warmer temperatures compared to Grand Mesa, and are characterized by a mix of open and forested regions, which allows us to compare performance in vegetated and open areas.
+
+\begin{figure}[!t]
+  \centering
+  \includegraphics[width=3.0in]{figure1.jpg}
+  \caption{Study sites in the central mountains of Idaho showing airborne lidar extents at Banner Creek Summit (red polygon), Dry Creek Experimental Watershed (blue polygon), and Mores Creek Summit (purple polygon) within the UAVSAR flight extent (pink polygon) from the 2020-2021 NASA SnowEx campaign.}
+  \label{fig-1}
+  \end{figure}
+
+\section{Data}
+
+\subsection{Lidar Data}
+
+Snow depth maps were derived from airborne lidar surveys conducted by Quantum Spatial Inc. (QSI) during the NASA SnowEx 2020 and 2021 campaigns. The lidar data provided high-resolution digital elevation models \cite{naheem2022dem}, snow depth measurements \cite{naheem2022sd}, and vegetation height \cite{naheem2022vh} at a horizontal resolution of 0.5 meters. These products were generated from lidar point cloud digital terrain models (PCDTMs). Snow depths were calculated by differencing snow-on and snow-off elevation pairs (snow-on minus snow-off), with the following acquisition dates:
+
+\begin{itemize}
+  \item \textbf{Banner Summit}: Snow-on lidar data were acquired on February 18-19, 2020, and March 15, 2021, while snow-off data were collected on September 17, 2021.
+  \item \textbf{Dry Creek}: Snow-on data were collected on February 19, 2020, and snow-off data on September 16, 2021.
+  \item \textbf{Mores Creek}: Snow-on acquisitions were conducted on February 9, 2020, and March 15, 2021, with snow-off data captured on September 17, 2021.
+\end{itemize}
+
+These high-resolution snow depth maps were used to train and validate the XGBoost model for the L-band InSAR depth retrievals. The vegetation height ($VH$) was used to classify the study areas into vegetated ($VH < 0.5\ m$) and open areas.
+
+\subsection{L-band InSAR Data}
+
+The L-band InSAR data for this study were acquired using NASA's Uninhabited Aerial Vehicle Synthetic Aperture Radar (UAVSAR) during the 2020 and 2021 SnowEx campaigns. UAVSAR is a fully polarimetric system operated by the NASA Jet Propulsion Laboratory (JPL). It flies at an altitude of approximately 13.7 km and has a center frequency of 1.26 GHz (wavelength = 23.84 cm) \cite{hoppinen2023snow}. We employed repeat-pass interferometry, where two images of the same scene are acquired on different dates to measure surface changes. In snow monitoring applications, repeat-pass InSAR at L-band frequency has been used to measure SWE and snow depth changes \cite{guneriussen2001insar, deeb2011monitoring}. The low frequency (or long wavelength) makes L-band signals travel almost unaffected in dry snow \cite{hall2006estimation, marshall2005estimating}. L-band InSAR signals can penetrate vegetation canopies and 10+ meters into dry snow \cite{alabi5advancing}. 
+
+As L-band radar waves propagate through snow, they undergo refraction and slow down due to differences in dielectric properties between snow and the atmosphere. This refraction, governed by the refractive index of snow, causes a phase shift relative to radar signals when less snow is present. This phase shift can be related to changes in snow depth and SWE \cite{guneriussen2001insar}. In the present study, we predict total snow depth (rather than changes in snow depth), assuming that the patterns of snow depth change detected by InSAR are representative of total snow depth distribution. This assumption is supported by previous research \cite{sturm2010using, mason2020snow, pflug2020inferring}, which has shown that snow depth patterns exhibit intra- and inter-seasonal consistency despite variability in weather patterns and seasonal snowfall amounts. Additional details on L-band InSAR–based total snow depth retrieval can be found in our earlier proof-of-concept study \cite{alabi5advancing}.
+
+UAVSAR collects data in all polarization combinations (HH, HV, VH, VV) and provides various interferometric products, including amplitude images, coherence maps, wrapped and unwrapped phase differences, local incidence angles, and a reference digital elevation model. While any polarization can be used for snow property retrievals, this study employed the VV polarization due to its higher median coherence value (data not shown). Higher coherence values generally indicate more reliable phase measurements, which implies a more accurate retrieval. All UAVSAR data were downloaded and converted into GeoTIFF format in Python using the \texttt{uavsar-pytools} package \cite{uavsarpytools}.
+
+\section{Methods}
+
+This study builds upon the framework established in our previous proof-of-concept work \cite{alabi5advancing}, extending it to evaluate the transferability of machine learning (ML) models (XGBoost in this case) for snow depth retrieval in rugged terrain. Our methodology involves four main steps: (1) data preprocessing, (2) model transferability evaluation, (3) model retraining with local data, and (4) performance analysis across spatial resolutions and coherence values. In the earlier study, separate models were developed for open and vegetated regions. However, the results indicated that a single model incorporating vegetation height as a predictor could distinguish between these areas (see Table 2 in \cite{alabi5advancing}). Based on this finding, the model in the present study integrates both InSAR-derived features and vegetation height. The model is expressed mathematically in Equation 1:
+
+\begin{equation}
+  \label{eq:1}
+  h_s = f(\theta_{inc}, \phi_{\texttt{unwrap}}, \phi_{\texttt{wrap}}, z_{\texttt{ground}}, A_2, VH, \gamma)
+\end{equation}
+
+where $h_s$ is the snow depth in meters, $\theta_{inc}$ is the local incidence angle in radians, $\phi_{unwrap}$ and $\phi_{wrap}$ are the unwrapped and wrapped phase values in radians, $z_{ground}$ is the ground elevation in meters, $A_2$ is the amplitude from the second flight in volts, $VH$ is the vegetation height in meters, and $\gamma$ is the coherence. The function $f$ represents the XGBoost model, trained on lidar-derived snow depth data.
+
+\subsection{Data Preprocessing}
+
+During the 2020-2021 SnowEx campaigns, UAVSAR conducted multiple flights over our study sites. We first identified areas where UAVSAR coverage overlapped with the lidar extents at Banner Creek, Dry Creek, and Mores Creek (Fig.~\ref{fig-1}). Within these overlapping regions, we selected InSAR pairs that were temporally closest to the lidar acquisitions. For the 2020 campaign, we used UAVSAR pairs from February 13-21, while for 2021, we used March 10-16 pairs. See Table 1 in Hoppinen et al. \cite{hoppinen2023snow} for a summary of the UAVSAR flight dates. 
+
+% We selected InSAR pairs that were temporally closest to the lidar acquisitions. For the 2020 campaign, we used UAVSAR pairs from February 13-21, while for 2021, we used March 10-16 pairs. The analysis for each site was conducted as follows:
+
+
+% \begin{itemize}
+% \item \textbf{Banner Creek}: Both 2020 and 2021 UAVSAR pairs were used, coinciding with the February 2020 and March 2021 lidar acquisitions.
+% \item \textbf{Dry Creek}: Only the 2020 UAVSAR pair was used, matching the February 2020 lidar acquisition.
+% \item \textbf{Mores Creek}: Only the 2021 UAVSAR pair was used. While a 2020 UAVSAR pair (January 31-February 13) was available, it was excluded due to unsuccessful phase unwrapping.
+% \end{itemize}
+
+% The model is evaluated across different resolutions and coherence values to assess its performance in rugged mountainous terrain.
+
+% and is less affected by volume scattering in snow-covered areas \cite{alabi5advancing}. The UAVSAR data were processed to generate interferograms, coherence, and amplitude images at multiple resolutions (3, 5, 10, 50, and 100 m) using the JPL-ISCE software \cite{isce2022}. The interferograms were unwrapped to obtain phase values, which were converted to snow depth estimates using the XGBoost model trained on the lidar data.
+
+% The UAVSAR data were processed to generate interferograms, coherence, and amplitude images at multiple resolutions (3, 5, 10, 50, and 100 m) using the JPL-ISCE software \cite{isce2022}. The interferograms were unwrapped to obtain phase values, which were converted to snow depth estimates using the XGBoost model trained on the lidar data.
+
+
+% The UAVSAR sensor operates at a center frequency of 1.257 GHz (L-band) with a wavelength of 25 cm. The data were acquired in repeat-pass interferometric mode, with a 12-day revisit cycle. The UAVSAR data were processed to generate interferograms, coherence, and amplitude images at multiple resolutions (3, 5, 10, 50, and 100 m) using the JPL-ISCE software \cite{isce2022}. The interferograms were unwrapped to obtain phase values, which were converted to snow depth estimates using the XGBoost model trained on the lidar data.
+
+\section{Where to Get \LaTeX \ Help --- User Groups}
+The following online groups are helpful to beginning and experienced \LaTeX\ users. A search through their archives can provide many answers to common questions.
+\begin{list}{}{}
+\item{\url{http://www.latex-community.org/}} 
+\item{\url{https://tex.stackexchange.com/} }
+\end{list}
+
+\section{Other Resources}
+See \cite{ref1,ref2,ref3,ref4,ref5} for resources on formatting math into text and additional help in working with \LaTeX .
+
+\section{Text}
+For some of the remainer of this sample we will use dummy text to fill out paragraphs rather than use live text that may violate a copyright.
+
+Itam, que ipiti sum dem velit la sum et dionet quatibus apitet voloritet audam, qui aliciant voloreicid quaspe volorem ut maximusandit faccum conemporerum aut ellatur, nobis arcimus.
+Fugit odi ut pliquia incitium latum que cusapere perit molupta eaquaeria quod ut optatem poreiur? Quiaerr ovitior suntiant litio bearciur?
+
+Onseque sequaes rectur autate minullore nusae nestiberum, sum voluptatio. Et ratem sequiam quaspername nos rem repudandae volum consequis nos eium aut as molupta tectum ulparumquam ut maximillesti consequas quas inctia cum volectinusa porrum unt eius cusaest exeritatur? Nias es enist fugit pa vollum reium essusam nist et pa aceaqui quo elibusdandis deligendus que nullaci lloreri bla que sa coreriam explacc atiumquos simolorpore, non prehendunt lam que occum\cite{ref6} si aut aut maximus eliaeruntia dia sequiamenime natem sendae ipidemp orehend uciisi omnienetus most verum, ommolendi omnimus, est, veni aut ipsa volendelist mo conserum volores estisciis recessi nveles ut poressitatur sitiis ex endi diti volum dolupta aut aut odi as eatquo cullabo remquis toreptum et des accus dolende pores sequas dolores tinust quas expel moditae ne sum quiatis nis endipie nihilis etum fugiae audi dia quiasit quibus.
+\IEEEpubidadjcol
+Ibus el et quatemo luptatque doluptaest et pe volent rem ipidusa eribus utem venimolorae dera qui acea quam etur aceruptat.
+Gias anis doluptaspic tem et aliquis alique inctiuntiur?
+
+Sedigent, si aligend elibuscid ut et ium volo tem eictore pellore ritatus ut ut ullatus in con con pere nos ab ium di tem aliqui od magnit repta volectur suntio. Nam isquiante doluptis essit, ut eos suntionsecto debitiur sum ea ipitiis adipit, oditiore, a dolorerempos aut harum ius, atquat.
+
+Rum rem ditinti sciendunti volupiciendi sequiae nonsect oreniatur, volores sition ressimil inus solut ea volum harumqui to see\eqref{deqn_ex1a} mint aut quat eos explis ad quodi debis deliqui aspel earcius.
+
+\begin{equation}
+\label{deqn_ex1a}
+x = \sum_{i=0}^{n} 2{i} Q.
+\end{equation}
+
+Alis nime volorempera perferi sitio denim repudae pre ducilit atatet volecte ssimillorae dolore, ut pel ipsa nonsequiam in re nus maiost et que dolor sunt eturita tibusanis eatent a aut et dio blaudit reptibu scipitem liquia consequodi od unto ipsae. Et enitia vel et experferum quiat harum sa net faccae dolut voloria nem. Bus ut labo. Ita eum repraer rovitia samendit aut et volupta tecupti busant omni quiae porro que nossimodic temquis anto blacita conse nis am, que ereperum eumquam quaescil imenisci quae magnimos recus ilibeaque cum etum iliate prae parumquatemo blaceaquiam quundia dit apienditem rerit re eici quaes eos sinvers pelecabo. Namendignis as exerupit aut magnim ium illabor roratecte plic tem res apiscipsam et vernat untur a deliquaest que non cus eat ea dolupiducim fugiam volum hil ius dolo eaquis sitis aut landesto quo corerest et auditaquas ditae voloribus, qui optaspis exero cusa am, ut plibus.
+
+
+\section{Some Common Elements}
+\subsection{Sections and Subsections}
+Enumeration of section headings is desirable, but not required. When numbered, please be consistent throughout the article, that is, all headings and all levels of section headings in the article should be enumerated. Primary headings are designated with Roman numerals, secondary with capital letters, tertiary with Arabic numbers; and quaternary with lowercase letters. Reference and Acknowledgment headings are unlike all other section headings in text. They are never enumerated. They are simply primary headings without labels, regardless of whether the other headings in the article are enumerated. 
+
+\subsection{Citations to the Bibliography}
+The coding for the citations is made with the \LaTeX\ $\backslash${\tt{cite}} command. 
+This will display as: see \cite{ref1}.
+
+For multiple citations code as follows: {\tt{$\backslash$cite\{ref1,ref2,ref3\}}}
+ which will produce \cite{ref1,ref2,ref3}. For reference ranges that are not consecutive code as {\tt{$\backslash$cite\{ref1,ref2,ref3,ref9\}}} which will produce  \cite{ref1,ref2,ref3,ref9}
+
+\subsection{Lists}
+In this section, we will consider three types of lists: simple unnumbered, numbered, and bulleted. There have been many options added to IEEEtran to enhance the creation of lists. If your lists are more complex than those shown below, please refer to the original ``IEEEtran\_HOWTO.pdf'' for additional options.\\
+
+\subsubsection*{\bf A plain  unnumbered list}
+\begin{list}{}{}
+\item{bare\_jrnl.tex}
+\item{bare\_conf.tex}
+\item{bare\_jrnl\_compsoc.tex}
+\item{bare\_conf\_compsoc.tex}
+\item{bare\_jrnl\_comsoc.tex}
+\end{list}
+
+\subsubsection*{\bf A simple numbered list}
+\begin{enumerate}
+\item{bare\_jrnl.tex}
+\item{bare\_conf.tex}
+\item{bare\_jrnl\_compsoc.tex}
+\item{bare\_conf\_compsoc.tex}
+\item{bare\_jrnl\_comsoc.tex}
+\end{enumerate}
+
+\subsubsection*{\bf A simple bulleted list}
+\begin{itemize}
+\item{bare\_jrnl.tex}
+\item{bare\_conf.tex}
+\item{bare\_jrnl\_compsoc.tex}
+\item{bare\_conf\_compsoc.tex}
+\item{bare\_jrnl\_comsoc.tex}
+\end{itemize}
+
+
+
+
+
+\subsection{Figures}
+Fig. 1 is an example of a floating figure using the graphicx package.
+ Note that $\backslash${\tt{label}} must occur AFTER (or within) $\backslash${\tt{caption}}.
+ For figures, $\backslash${\tt{caption}} should occur after the $\backslash${\tt{includegraphics}}.
+
+\begin{figure}[!t]
+\centering
+\includegraphics[width=2.5in]{fig1}
+\caption{Simulation results for the network.}
+\label{fig_1}
+\end{figure}
+
+Fig. 2(a) and 2(b) is an example of a double column floating figure using two subfigures.
+ (The subfig.sty package must be loaded for this to work.)
+ The subfigure $\backslash${\tt{label}} commands are set within each subfloat command,
+ and the $\backslash${\tt{label}} for the overall figure must come after $\backslash${\tt{caption}}.
+ $\backslash${\tt{hfil}} is used as a separator to get equal spacing.
+ The combined width of all the parts of the figure should do not exceed the text width or a line break will occur.
+%
+\begin{figure*}[!t]
+\centering
+\subfloat[]{\includegraphics[width=2.5in]{fig1}%
+\label{fig_first_case}}
+\hfil
+\subfloat[]{\includegraphics[width=2.5in]{fig1}%
+\label{fig_second_case}}
+\caption{Dae. Ad quatur autat ut porepel itemoles dolor autem fuga. Bus quia con nessunti as remo di quatus non perum que nimus. (a) Case I. (b) Case II.}
+\label{fig_sim}
+\end{figure*}
+
+Note that often IEEE papers with multi-part figures do not place the labels within the image itself (using the optional argument to $\backslash${\tt{subfloat}}[]), but instead will
+ reference/describe all of them (a), (b), etc., within the main caption.
+ Be aware that for subfig.sty to generate the (a), (b), etc., subfigure
+ labels, the optional argument to $\backslash${\tt{subfloat}} must be present. If a
+ subcaption is not desired, leave its contents blank,
+ e.g.,$\backslash${\tt{subfloat}}[].
+
+
+ 
+
+\section{Tables}
+Note that, for IEEE-style tables, the
+ $\backslash${\tt{caption}} command should come BEFORE the table. Table captions use title case. Articles (a, an, the), coordinating conjunctions (and, but, for, or, nor), and most short prepositions are lowercase unless they are the first or last word. Table text will default to $\backslash${\tt{footnotesize}} as
+ the IEEE normally uses this smaller font for tables.
+ The $\backslash${\tt{label}} must come after $\backslash${\tt{caption}} as always.
+ 
+\begin{table}[!t]
+\caption{An Example of a Table\label{tab:table1}}
+\centering
+\begin{tabular}{|c||c|}
+\hline
+One & Two\\
+\hline
+Three & Four\\
+\hline
+\end{tabular}
+\end{table}
+
+\section{Algorithms}
+Algorithms should be numbered and include a short title. They are set off from the text with rules above and below the title and after the last line.
+
+\begin{algorithm}[H]
+\caption{Weighted Tanimoto ELM.}\label{alg:alg1}
+\begin{algorithmic}
+\STATE 
+\STATE {\textsc{TRAIN}}$(\mathbf{X} \mathbf{T})$
+\STATE \hspace{0.5cm}$ \textbf{select randomly } W \subset \mathbf{X}  $
+\STATE \hspace{0.5cm}$ N_\mathbf{t} \gets | \{ i : \mathbf{t}_i = \mathbf{t} \} | $ \textbf{ for } $ \mathbf{t}= -1,+1 $
+\STATE \hspace{0.5cm}$ B_i \gets \sqrt{ \textsc{max}(N_{-1},N_{+1}) / N_{\mathbf{t}_i} } $ \textbf{ for } $ i = 1,...,N $
+\STATE \hspace{0.5cm}$ \hat{\mathbf{H}} \gets  B \cdot (\mathbf{X}^T\textbf{W})/( \mathbb{1}\mathbf{X} + \mathbb{1}\textbf{W} - \mathbf{X}^T\textbf{W} ) $
+\STATE \hspace{0.5cm}$ \beta \gets \left ( I/C + \hat{\mathbf{H}}^T\hat{\mathbf{H}} \right )^{-1}(\hat{\mathbf{H}}^T B\cdot \mathbf{T})  $
+\STATE \hspace{0.5cm}\textbf{return}  $\textbf{W},  \beta $
+\STATE 
+\STATE {\textsc{PREDICT}}$(\mathbf{X} )$
+\STATE \hspace{0.5cm}$ \mathbf{H} \gets  (\mathbf{X}^T\textbf{W} )/( \mathbb{1}\mathbf{X}  + \mathbb{1}\textbf{W}- \mathbf{X}^T\textbf{W}  ) $
+\STATE \hspace{0.5cm}\textbf{return}  $\textsc{sign}( \mathbf{H} \beta )$
+\end{algorithmic}
+\label{alg1}
+\end{algorithm}
+
+Que sunt eum lam eos si dic to estist, culluptium quid qui nestrum nobis reiumquiatur minimus minctem. Ro moluptat fuga. Itatquiam ut laborpo rersped exceres vollandi repudaerem. Ulparci sunt, qui doluptaquis sumquia ndestiu sapient iorepella sunti veribus. Ro moluptat fuga. Itatquiam ut laborpo rersped exceres vollandi repudaerem. 
+\section{Mathematical Typography \\ and Why It Matters}
+
+Typographical conventions for mathematical formulas have been developed to {\bf provide uniformity and clarity of presentation across mathematical texts}. This enables the readers of those texts to both understand the author's ideas and to grasp new concepts quickly. While software such as \LaTeX \ and MathType\textsuperscript{\textregistered} can produce aesthetically pleasing math when used properly, it is also very easy to misuse the software, potentially resulting in incorrect math display.
+
+IEEE aims to provide authors with the proper guidance on mathematical typesetting style and assist them in writing the best possible article. As such, IEEE has assembled a set of examples of good and bad mathematical typesetting \cite{ref1,ref2,ref3,ref4,ref5}. 
+
+Further examples can be found at \url{http://journals.ieeeauthorcenter.ieee.org/wp-content/uploads/sites/7/IEEE-Math-Typesetting-Guide-for-LaTeX-Users.pdf}
+
+\subsection{Display Equations}
+The simple display equation example shown below uses the ``equation'' environment. To number the equations, use the $\backslash${\tt{label}} macro to create an identifier for the equation. LaTeX will automatically number the equation for you.
+\begin{equation}
+\label{deqn_ex1}
+x = \sum_{i=0}^{n} 2{i} Q.
+\end{equation}
+
+\noindent is coded as follows:
+\begin{verbatim}
+\begin{equation}
+\label{deqn_ex1}
+x = \sum_{i=0}^{n} 2{i} Q.
+\end{equation}
+\end{verbatim}
+
+To reference this equation in the text use the $\backslash${\tt{ref}} macro. 
+Please see (\ref{deqn_ex1})\\
+\noindent is coded as follows:
+\begin{verbatim}
+Please see (\ref{deqn_ex1})\end{verbatim}
+
+\subsection{Equation Numbering}
+{\bf{Consecutive Numbering:}} Equations within an article are numbered consecutively from the beginning of the
+article to the end, i.e., (1), (2), (3), (4), (5), etc. Do not use roman numerals or section numbers for equation numbering.
+
+\noindent {\bf{Appendix Equations:}} The continuation of consecutively numbered equations is best in the Appendix, but numbering
+ as (A1), (A2), etc., is permissible.\\
+
+\noindent {\bf{Hyphens and Periods}}: Hyphens and periods should not be used in equation numbers, i.e., use (1a) rather than
+(1-a) and (2a) rather than (2.a) for subequations. This should be consistent throughout the article.
+
+\subsection{Multi-Line Equations and Alignment}
+Here we show several examples of multi-line equations and proper alignments.
+
+\noindent {\bf{A single equation that must break over multiple lines due to length with no specific alignment.}}
+\begin{multline}
+\text{The first line of this example}\\
+\text{The second line of this example}\\
+\text{The third line of this example}
+\end{multline}
+
+\noindent is coded as:
+\begin{verbatim}
+\begin{multline}
+\text{The first line of this example}\\
+\text{The second line of this example}\\
+\text{The third line of this example}
+\end{multline}
+\end{verbatim}
+
+\noindent {\bf{A single equation with multiple lines aligned at the = signs}}
+\begin{align}
+a &= c+d \\
+b &= e+f
+\end{align}
+\noindent is coded as:
+\begin{verbatim}
+\begin{align}
+a &= c+d \\
+b &= e+f
+\end{align}
+\end{verbatim}
+
+The {\tt{align}} environment can align on multiple  points as shown in the following example:
+\begin{align}
+x &= y & X & =Y & a &=bc\\
+x' &= y' & X' &=Y' &a' &=bz
+\end{align}
+\noindent is coded as:
+\begin{verbatim}
+\begin{align}
+x &= y & X & =Y & a &=bc\\
+x' &= y' & X' &=Y' &a' &=bz
+\end{align}
+\end{verbatim}
+
+
+
+
+
+\subsection{Subnumbering}
+The amsmath package provides a {\tt{subequations}} environment to facilitate subnumbering. An example:
+
+\begin{subequations}\label{eq:2}
+\begin{align}
+f&=g \label{eq:2A}\\
+f' &=g' \label{eq:2B}\\
+\mathcal{L}f &= \mathcal{L}g \label{eq:2c}
+\end{align}
+\end{subequations}
+
+\noindent is coded as:
+\begin{verbatim}
+\begin{subequations}\label{eq:2}
+\begin{align}
+f&=g \label{eq:2A}\\
+f' &=g' \label{eq:2B}\\
+\mathcal{L}f &= \mathcal{L}g \label{eq:2c}
+\end{align}
+\end{subequations}
+
+\end{verbatim}
+
+\subsection{Matrices}
+There are several useful matrix environments that can save you some keystrokes. See the example coding below and the output.
+
+\noindent {\bf{A simple matrix:}}
+\begin{equation}
+\begin{matrix}  0 &  1 \\ 
+1 &  0 \end{matrix}
+\end{equation}
+is coded as:
+\begin{verbatim}
+\begin{equation}
+\begin{matrix}  0 &  1 \\ 
+1 &  0 \end{matrix}
+\end{equation}
+\end{verbatim}
+
+\noindent {\bf{A matrix with parenthesis}}
+\begin{equation}
+\begin{pmatrix} 0 & -i \\
+ i &  0 \end{pmatrix}
+\end{equation}
+is coded as:
+\begin{verbatim}
+\begin{equation}
+\begin{pmatrix} 0 & -i \\
+ i &  0 \end{pmatrix}
+\end{equation}
+\end{verbatim}
+
+\noindent {\bf{A matrix with square brackets}}
+\begin{equation}
+\begin{bmatrix} 0 & -1 \\ 
+1 &  0 \end{bmatrix}
+\end{equation}
+is coded as:
+\begin{verbatim}
+\begin{equation}
+\begin{bmatrix} 0 & -1 \\ 
+1 &  0 \end{bmatrix}
+\end{equation}
+\end{verbatim}
+
+\noindent {\bf{A matrix with curly braces}}
+\begin{equation}
+\begin{Bmatrix} 1 &  0 \\ 
+0 & -1 \end{Bmatrix}
+\end{equation}
+is coded as:
+\begin{verbatim}
+\begin{equation}
+\begin{Bmatrix} 1 &  0 \\ 
+0 & -1 \end{Bmatrix}
+\end{equation}\end{verbatim}
+
+\noindent {\bf{A matrix with single verticals}}
+\begin{equation}
+\begin{vmatrix} a &  b \\ 
+c &  d \end{vmatrix}
+\end{equation}
+is coded as:
+\begin{verbatim}
+\begin{equation}
+\begin{vmatrix} a &  b \\ 
+c &  d \end{vmatrix}
+\end{equation}\end{verbatim}
+
+\noindent {\bf{A matrix with double verticals}}
+\begin{equation}
+\begin{Vmatrix} i &  0 \\ 
+0 & -i \end{Vmatrix}
+\end{equation}
+is coded as:
+\begin{verbatim}
+\begin{equation}
+\begin{Vmatrix} i &  0 \\ 
+0 & -i \end{Vmatrix}
+\end{equation}\end{verbatim}
+
+\subsection{Arrays}
+The {\tt{array}} environment allows you some options for matrix-like equations. You will have to manually key the fences, but there are other options for alignment of the columns and for setting horizontal and vertical rules. The argument to {\tt{array}} controls alignment and placement of vertical rules.
+
+A simple array
+\begin{equation}
+\left(
+\begin{array}{cccc}
+a+b+c & uv & x-y & 27\\
+a+b & u+v & z & 134
+\end{array}\right)
+\end{equation}
+is coded as:
+\begin{verbatim}
+\begin{equation}
+\left(
+\begin{array}{cccc}
+a+b+c & uv & x-y & 27\\
+a+b & u+v & z & 134
+\end{array} \right)
+\end{equation}
+\end{verbatim}
+
+A slight variation on this to better align the numbers in the last column
+\begin{equation}
+\left(
+\begin{array}{cccr}
+a+b+c & uv & x-y & 27\\
+a+b & u+v & z & 134
+\end{array}\right)
+\end{equation}
+is coded as:
+\begin{verbatim}
+\begin{equation}
+\left(
+\begin{array}{cccr}
+a+b+c & uv & x-y & 27\\
+a+b & u+v & z & 134
+\end{array} \right)
+\end{equation}
+\end{verbatim}
+
+An array with vertical and horizontal rules
+\begin{equation}
+\left( \begin{array}{c|c|c|r}
+a+b+c & uv & x-y & 27\\ \hline
+a+b & u+v & z & 134
+\end{array}\right)
+\end{equation}
+is coded as:
+\begin{verbatim}
+\begin{equation}
+\left(
+\begin{array}{c|c|c|r}
+a+b+c & uv & x-y & 27\\
+a+b & u+v & z & 134
+\end{array} \right)
+\end{equation}
+\end{verbatim}
+Note the argument now has the pipe "$\vert$" included to indicate the placement of the vertical rules.
+
+
+\subsection{Cases Structures}
+Many times cases can be miscoded using the wrong environment, i.e., {\tt{array}}. Using the {\tt{cases}} environment will save keystrokes (from not having to type the $\backslash${\tt{left}}$\backslash${\tt{lbrace}}) and automatically provide the correct column alignment.
+\begin{equation*}
+{z_m(t)} = \begin{cases}
+1,&{\text{if}}\ {\beta }_m(t) \\ 
+{0,}&{\text{otherwise.}} 
+\end{cases}
+\end{equation*}
+\noindent is coded as follows:
+\begin{verbatim}
+\begin{equation*}
+{z_m(t)} = 
+\begin{cases}
+1,&{\text{if}}\ {\beta }_m(t),\\ 
+{0,}&{\text{otherwise.}} 
+\end{cases}
+\end{equation*}
+\end{verbatim}
+\noindent Note that the ``\&'' is used to mark the tabular alignment. This is important to get  proper column alignment. Do not use $\backslash${\tt{quad}} or other fixed spaces to try and align the columns. Also, note the use of the $\backslash${\tt{text}} macro for text elements such as ``if'' and ``otherwise.''
+
+\subsection{Function Formatting in Equations}
+Often, there is an easy way to properly format most common functions. Use of the $\backslash$ in front of the function name will in most cases, provide the correct formatting. When this does not work, the following example provides a solution using the $\backslash${\tt{text}} macro:
+
+\begin{equation*} 
+  d_{R}^{KM} = \underset {d_{l}^{KM}} {\text{arg min}} \{ d_{1}^{KM},\ldots,d_{6}^{KM}\}.
+\end{equation*}
+
+\noindent is coded as follows:
+\begin{verbatim}
+\begin{equation*} 
+ d_{R}^{KM} = \underset {d_{l}^{KM}} 
+ {\text{arg min}} \{ d_{1}^{KM},
+ \ldots,d_{6}^{KM}\}.
+\end{equation*}
+\end{verbatim}
+
+\subsection{ Text Acronyms Inside Equations}
+This example shows where the acronym ``MSE" is coded using $\backslash${\tt{text\{\}}} to match how it appears in the text.
+
+\begin{equation*}
+ \text{MSE} = \frac {1}{n}\sum _{i=1}^{n}(Y_{i} - \hat {Y_{i}})^{2}
+\end{equation*}
+
+\begin{verbatim}
+\begin{equation*}
+ \text{MSE} = \frac {1}{n}\sum _{i=1}^{n}
+(Y_{i} - \hat {Y_{i}})^{2}
+\end{equation*}
+\end{verbatim}
+
+\section{Conclusion}
+The conclusion goes here.
+
+
+\section*{Acknowledgments}
+This should be a simple paragraph before the References to thank those individuals and institutions who have supported your work on this article.
+
+\bibliographystyle{IEEEtran}
+\bibliography{references}
+
+
+
+% {\appendix[Proof of the Zonklar Equations]
+% Use $\backslash${\tt{appendix}} if you have a single appendix:
+% Do not use $\backslash${\tt{section}} anymore after $\backslash${\tt{appendix}}, only $\backslash${\tt{section*}}.
+% If you have multiple appendixes use $\backslash${\tt{appendices}} then use $\backslash${\tt{section}} to start each appendix.
+% You must declare a $\backslash${\tt{section}} before using any $\backslash${\tt{subsection}} or using $\backslash${\tt{label}} ($\backslash${\tt{appendices}} by itself
+%  starts a section numbered zero.)}
+
+
+
+%{\appendices
+%\section*{Proof of the First Zonklar Equation}
+%Appendix one text goes here.
+% You can choose not to have a title for an appendix if you want by leaving the argument blank
+%\section*{Proof of the Second Zonklar Equation}
+%Appendix two text goes here.}
+
+
+
+% \section{References Section}
+% You can use a bibliography generated by BibTeX as a .bbl file.
+%  BibTeX documentation can be easily obtained at:
+%  http://mirror.ctan.org/biblio/bibtex/contrib/doc/
+%  The IEEEtran BibTeX style support page is:
+%  http://www.michaelshell.org/tex/ieeetran/bibtex/
+ 
+ % argument is your BibTeX string definitions and bibliography database(s)
+%\bibliography{IEEEabrv,../bib/paper}
+%
+% \section{Simple References}
+% You can manually copy in the resultant .bbl file and set second argument of $\backslash${\tt{begin}} to the number of references
+%  (used to reserve space for the reference number labels box).
+
+% \begin{thebibliography}{1}
+% \bibliographystyle{IEEEtran}
+
+% \bibitem{ref1}
+% {\it{Mathematics Into Type}}. American Mathematical Society. [Online]. Available: https://www.ams.org/arc/styleguide/mit-2.pdf
+
+% \bibitem{ref2}
+% T. W. Chaundy, P. R. Barrett and C. Batey, {\it{The Printing of Mathematics}}. London, U.K., Oxford Univ. Press, 1954.
+
+% \bibitem{ref3}
+% F. Mittelbach and M. Goossens, {\it{The \LaTeX Companion}}, 2nd ed. Boston, MA, USA: Pearson, 2004.
+
+% \bibitem{ref4}
+% G. Gr\"atzer, {\it{More Math Into LaTeX}}, New York, NY, USA: Springer, 2007.
+
+% \bibitem{ref5}M. Letourneau and J. W. Sharp, {\it{AMS-StyleGuide-online.pdf,}} American Mathematical Society, Providence, RI, USA, [Online]. Available: http://www.ams.org/arc/styleguide/index.html
+
+% \bibitem{ref6}
+% H. Sira-Ramirez, ``On the sliding mode control of nonlinear systems,'' \textit{Syst. Control Lett.}, vol. 19, pp. 303--312, 1992.
+
+% \bibitem{ref7}
+% A. Levant, ``Exact differentiation of signals with unbounded higher derivatives,''  in \textit{Proc. 45th IEEE Conf. Decis.
+% Control}, San Diego, CA, USA, 2006, pp. 5585--5590. DOI: 10.1109/CDC.2006.377165.
+
+% \bibitem{ref8}
+% M. Fliess, C. Join, and H. Sira-Ramirez, ``Non-linear estimation is easy,'' \textit{Int. J. Model., Ident. Control}, vol. 4, no. 1, pp. 12--27, 2008.
+
+% \bibitem{ref9}
+% R. Ortega, A. Astolfi, G. Bastin, and H. Rodriguez, ``Stabilization of food-chain systems using a port-controlled Hamiltonian description,'' in \textit{Proc. Amer. Control Conf.}, Chicago, IL, USA,
+% 2000, pp. 2245--2249.
+
+% \end{thebibliography}
+
+
+\newpage
+
+\section{Biography Section}
+If you have an EPS/PDF photo (graphicx package needed), extra braces are
+ needed around the contents of the optional argument to biography to prevent
+ the LaTeX parser from getting confused when it sees the complicated
+ $\backslash${\tt{includegraphics}} command within an optional argument. (You can create
+ your own custom macro containing the $\backslash${\tt{includegraphics}} command to make things
+ simpler here.)
+ 
+\vspace{11pt}
+
+\bf{If you include a photo:}\vspace{-33pt}
+\begin{IEEEbiography}[{\includegraphics[width=1in,height=1.25in,clip,keepaspectratio]{fig1}}]{Michael Shell}
+Use $\backslash${\tt{begin\{IEEEbiography\}}} and then for the 1st argument use $\backslash${\tt{includegraphics}} to declare and link the author photo.
+Use the author name as the 3rd argument followed by the biography text.
+\end{IEEEbiography}
+
+\vspace{11pt}
+
+\bf{If you will not include a photo:}\vspace{-33pt}
+\begin{IEEEbiographynophoto}{John Doe}
+Use $\backslash${\tt{begin\{IEEEbiographynophoto\}}} and the author name as the argument followed by the biography text.
+\end{IEEEbiographynophoto}
+
+
+
+
+\vfill
+
+\end{document}
+
+
