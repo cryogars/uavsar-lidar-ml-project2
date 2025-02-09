@@ -5,19 +5,19 @@ import rasterio
 from sklearn.model_selection import train_test_split
 import os
 import json
-from datetime import datetime
 import torch
+from datetime import datetime
 xgb_device = ("cuda" if torch.cuda.is_available() else "cpu")
 
 def prepare_data(dem_path, depth_path):
-    """Prepare data from rasters, handling nodata values and NaN."""
+    """Prepare data from rasters, handling nodata values, NaN, and negative depths."""
     with rasterio.open(dem_path) as dem_src, rasterio.open(depth_path) as depth_src:
         dem_data = dem_src.read(1)
         depth_data = depth_src.read(1)
         
         # Create masks for valid data
         dem_mask = (dem_data != dem_src.nodata) & (~np.isnan(dem_data))
-        depth_mask = (depth_data != depth_src.nodata) & (~np.isnan(depth_data))
+        depth_mask = (depth_data != depth_src.nodata) & (~np.isnan(depth_data)) & (depth_data > 0)
         valid_mask = dem_mask & depth_mask
         
         # Get valid data
@@ -29,14 +29,16 @@ def prepare_data(dem_path, depth_path):
         metadata = dem_src.meta.copy()
         
         print(f"Total pixels: {dem_data.size}")
-        print(f"Valid pixels: {len(X)}")
+        print(f"Valid pixels (after depth filtering): {len(X)}")
         print(f"DEM range: {np.min(X):.2f} to {np.max(X):.2f}")
         print(f"Depth range: {np.min(y):.2f} to {np.max(y):.2f}")
+        print(f"Negative depths removed: {np.sum((depth_data <= 0) & (depth_data != depth_src.nodata))}")
+        print(f"NaN depths removed: {np.sum(np.isnan(depth_data))}")
         
     return X.astype(np.float32), y.astype(np.float32), valid_idx, metadata
 
 def create_learning_curves(site='Dry', year='2020', resolutions=[3, 5, 10, 50, 100]):
-    """Create learning curves using XGBoost native API."""
+    """Create learning curves using XGBoost native API with GPU support."""
     curves_data = {}
     BASE_PATH = '/home/habeeb/insar_idaho/uavsar-lidar-ml-project2/data/Processed_Data'
     
@@ -44,12 +46,12 @@ def create_learning_curves(site='Dry', year='2020', resolutions=[3, 5, 10, 50, 1
     results_dir = os.path.join(BASE_PATH, 'Learning_Curves')
     os.makedirs(results_dir, exist_ok=True)
     
-    # XGBoost parameters
+    # XGBoost parameters with GPU settings
     xgb_params = {
         "sampling_method": "gradient_based",
         'objective': 'reg:squarederror',
         "min_child_weight": 30,
-        'learning_rate': 0.05,
+        'learning_rate': 0.3,
         'tree_method': 'hist',
         'booster': 'gbtree',
         'device': xgb_device,
@@ -145,7 +147,9 @@ def create_learning_curves(site='Dry', year='2020', resolutions=[3, 5, 10, 50, 1
                 'total_samples': len(X),
                 'train_samples': len(X_train),
                 'val_samples': len(X_val),
-                'test_samples': len(X_test)
+                'test_samples': len(X_test),
+                'dem_range': [float(np.min(X)), float(np.max(X))],
+                'depth_range': [float(np.min(y)), float(np.max(y))]
             }
         }
         
@@ -194,18 +198,19 @@ def plot_learning_curves(curves_data, site, year):
             ax.legend()
             ax.grid(True)
             
-            # Add sample sizes to the plot
+            # Add sample sizes and ranges to the plot
             ax.text(0.05, 0.95, 
                    f'Train: {data["metadata"]["train_samples"]}\n' +
                    f'Val: {data["metadata"]["val_samples"]}\n' +
-                   f'Test: {data["metadata"]["test_samples"]}', 
+                   f'Test: {data["metadata"]["test_samples"]}\n' +
+                   f'Depth: {data["metadata"]["depth_range"][0]:.1f}-{data["metadata"]["depth_range"][1]:.1f}m', 
                    transform=ax.transAxes, verticalalignment='top')
     
     plt.suptitle(f'Learning Curves - {site} {year}', fontsize=16)
     plt.tight_layout()
     
     # Save plot
-    results_dir = os.path.join('/home/habeeb/insat_part2/uavsar-lidar2/Data/Processed_Data', 'Learning_Curves')
+    results_dir = os.path.join('/home/habeeb/insar_idaho/uavsar-lidar-ml-project2/data/Processed_Data', 'Learning_Curves')
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
     plt.savefig(os.path.join(results_dir, f'learning_curves_{site}_{year}_{timestamp}.png'), 
                 dpi=300, bbox_inches='tight')
