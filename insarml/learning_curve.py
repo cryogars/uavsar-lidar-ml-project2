@@ -6,6 +6,8 @@ from sklearn.model_selection import train_test_split
 import os
 import json
 from datetime import datetime
+import torch
+xgb_device = ("cuda" if torch.cuda.is_available() else "cpu")
 
 def prepare_data(dem_path, depth_path):
     """Prepare data from rasters, handling nodata values and NaN."""
@@ -36,7 +38,7 @@ def prepare_data(dem_path, depth_path):
 def create_learning_curves(site='Dry', year='2020', resolutions=[3, 5, 10, 50, 100]):
     """Create learning curves using XGBoost native API."""
     curves_data = {}
-    BASE_PATH = '/home/habeeb/insat_part2/uavsar-lidar2/Data/Processed_Data'
+    BASE_PATH = '/home/habeeb/insar_idaho/uavsar-lidar-ml-project2/data/Processed_Data'
     
     # Create results directory
     results_dir = os.path.join(BASE_PATH, 'Learning_Curves')
@@ -50,10 +52,10 @@ def create_learning_curves(site='Dry', year='2020', resolutions=[3, 5, 10, 50, 1
         'learning_rate': 0.05,
         'tree_method': 'hist',
         'booster': 'gbtree',
-        'device': 'cuda',
+        'device': xgb_device,
         'max_depth': 0,
         "subsample": 1,
-        "max_bin": 5096,
+        "max_bin":5096,
         "seed": 42
     }
     
